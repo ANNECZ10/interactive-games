@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>משחק מילים בעברית 🇮🇱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#7EC8E3;
+    --sky-bottom:#EAF6FB;
+    --sand:#F3E1B5;
+    --sand-dark:#E4C888;
+    --stone:#D9C9A3;
+    --olive:#8A9A5B;
+    --olive-dark:#6B7A42;
+    --sun:#F5B942;
+    --blue:#3E7FA3;
+    --blue-dark:#2C5C78;
+    --coral:#F0836B;
+    --pink:#F2A6C2;
+    --green:#7FBF7F;
+    --purple:#B79CE0;
+    --red:#E0554F;
+    --white:#FFFFFF;
+    --ink:#2E3A46;
+    --card-shadow: 0 12px 30px rgba(46,58,70,0.18);
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    padding:0;
+    height:100%;
+    font-family:'Rubik', 'Segoe UI', sans-serif;
+    overflow:hidden;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;
+  }
+
+  body{
+    position:relative;
+    min-height:100vh;
+    background:linear-gradient(to bottom, var(--sky-top) 0%, var(--sky-bottom) 55%, var(--sand) 56%, var(--sand-dark) 100%);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+
+  /* ---------- Decorative background ---------- */
+  .bg-decor{
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+    overflow:hidden;
+    z-index:0;
+  }
+
+  .sun-glow{
+    position:absolute;
+    top:6%;
+    right:8%;
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    background:radial-gradient(circle, #FFE9A8 0%, var(--sun) 55%, rgba(245,185,66,0) 75%);
+    animation: pulseSun 5s ease-in-out infinite;
+  }
+  @keyframes pulseSun{
+    0%,100%{transform:scale(1);}
+    50%{transform:scale(1.08);}
+  }
+
+  .cloud{
+    position:absolute;
+    background:#fff;
+    border-radius:50px;
+    opacity:0.85;
+    animation: drift linear infinite;
+  }
+  .cloud::before, .cloud::after{
+    content:"";
+    position:absolute;
+    background:#fff;
+    border-radius:50%;
+  }
+  .cloud1{ width:90px; height:32px; top:10%; left:-100px; animation-duration:38s; }
+  .cloud1::before{ width:50px; height:50px; top:-22px; left:10px; }
+  .cloud1::after{ width:40px; height:40px; top:-16px; left:45px; }
+  .cloud2{ width:70px; height:26px; top:20%; left:-100px; animation-duration:52s; animation-delay:-15s; }
+  .cloud2::before{ width:38px; height:38px; top:-18px; left:8px; }
+  .cloud2::after{ width:30px; height:30px; top:-12px; left:35px; }
+  @keyframes drift{
+    from{ transform:translateX(0); }
+    to{ transform:translateX(140vw); }
+  }
+
+  .star-david{
+    position:absolute;
+    opacity:0.18;
+    animation: floaty 6s ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%,100%{ transform:translateY(0) rotate(0deg); }
+    50%{ transform:translateY(-10px) rotate(6deg); }
+  }
+  .sd1{ top:14%; left:6%; width:46px; animation-delay:0s;}
+  .sd2{ top:65%; right:5%; width:34px; animation-delay:1.2s;}
+  .sd3{ bottom:8%; left:12%; width:28px; animation-delay:2.4s;}
+
+  .dome{
+    position:absolute;
+    bottom:0;
+    left:50%;
+    transform:translateX(-50%);
+    width:min(90vw, 480px);
+    opacity:0.9;
+  }
+
+  .olive-branch{
+    position:absolute;
+    bottom:2%;
+    opacity:0.55;
+  }
+  .ob1{ left:2%; width:70px; transform:scaleX(-1);}
+  .ob2{ right:2%; width:70px; }
+
+  /* ---------- Top HUD ---------- */
+  .hud{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    padding:18px 22px;
+    z-index:5;
+    pointer-events:none;
+  }
+
+  .hearts{
+    display:flex;
+    gap:8px;
+    background:rgba(255,255,255,0.75);
+    padding:10px 14px;
+    border-radius:20px;
+    box-shadow:0 4px 14px rgba(46,58,70,0.15);
+    backdrop-filter: blur(3px);
+  }
+  .heart{
+    font-size:28px;
+    display:inline-block;
+    transition:transform .3s;
+  }
+  .heart.lost{
+    animation: heartBreak 0.6s ease forwards;
+  }
+  @keyframes heartBreak{
+    0%{ transform:scale(1) rotate(0deg); filter:none; }
+    30%{ transform:scale(1.35) rotate(-8deg); }
+    60%{ transform:scale(0.85) rotate(10deg); filter:grayscale(1) brightness(0.9); }
+    100%{ transform:scale(1) rotate(0deg); filter:grayscale(1) brightness(0.85); }
+  }
+
+  .timer-box{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    background:rgba(255,255,255,0.75);
+    padding:8px 12px;
+    border-radius:20px;
+    box-shadow:0 4px 14px rgba(46,58,70,0.15);
+  }
+  .timer-wrap{
+    position:relative;
+    width:56px;
+    height:56px;
+  }
+  .timer-wrap svg{
+    transform:rotate(-90deg);
+    width:56px;
+    height:56px;
+  }
+  .timer-ring-bg{
+    fill:none;
+    stroke:#ffffff;
+    stroke-width:6;
+  }
+  .timer-ring{
+    fill:none;
+    stroke:var(--coral);
+    stroke-width:6;
+    stroke-linecap:round;
+    transition: stroke-dashoffset 1s linear, stroke .3s;
+  }
+  .timer-face{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:22px;
+  }
+  .timer-num{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-weight:700;
+    font-size:16px;
+    color:var(--blue-dark);
+  }
+
+  /* ---------- Game card ---------- */
+  .stage{
+    position:relative;
+    z-index:2;
+    width:min(92vw, 560px);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+    margin-top:10px;
+  }
+
+  .progress-track{
+    width:100%;
+    height:10px;
+    background:rgba(255,255,255,0.6);
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--olive), var(--green));
+    border-radius:10px;
+    transition:width .5s ease;
+  }
+
+  .card{
+    position:relative;
+    background:var(--white);
+    border-radius:28px;
+    box-shadow:var(--card-shadow);
+    padding:28px 24px 24px;
+    width:100%;
+    text-align:center;
+    border:4px solid var(--stone);
+  }
+
+  .instruction{
+    font-size:14px;
+    color:#8A93A0;
+    margin-bottom:6px;
+    font-weight:500;
+  }
+  .instruction .fr{
+    display:block;
+    font-size:12px;
+    color:#B7BEC7;
+    margin-top:2px;
+  }
+
+  .word-emoji{
+    font-size:64px;
+    margin:6px 0 2px;
+    display:inline-block;
+    transition: transform .3s;
+  }
+
+  .hebrew-word{
+    font-size:44px;
+    font-weight:900;
+    color:var(--ink);
+    margin:4px 0 18px;
+    letter-spacing:1px;
+    position:relative;
+    display:inline-block;
+  }
+
+  .lifebuoy{
+    position:absolute;
+    top:50%;
+    left:50%;
+    width:150%;
+    height:150%;
+    transform:translate(-50%,-50%) scale(0) rotate(0deg);
+    pointer-events:none;
+    opacity:0;
+  }
+  .lifebuoy.show{
+    animation: buoyIn 1s cubic-bezier(.34,1.56,.64,1) forwards;
+  }
+  @keyframes buoyIn{
+    0%{ transform:translate(-50%,-50%) scale(0) rotate(-30deg); opacity:0; }
+    55%{ transform:translate(-50%,-50%) scale(1.15) rotate(15deg); opacity:1; }
+    75%{ transform:translate(-50%,-50%) scale(0.95) rotate(-5deg); opacity:1; }
+    100%{ transform:translate(-50%,-50%) scale(1) rotate(0deg); opacity:1; }
+  }
+
+  .options{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+    width:100%;
+  }
+
+  .opt-btn{
+    font-family:inherit;
+    font-size:19px;
+    font-weight:700;
+    padding:16px 10px;
+    border:none;
+    border-radius:20px;
+    cursor:pointer;
+    color:#fff;
+    box-shadow:0 6px 0 rgba(0,0,0,0.12), 0 8px 16px rgba(0,0,0,0.1);
+    transition: transform .12s ease, box-shadow .12s ease, filter .2s;
+    position:relative;
+  }
+  .opt-btn:active{
+    transform:translateY(4px);
+    box-shadow:0 2px 0 rgba(0,0,0,0.12), 0 4px 8px rgba(0,0,0,0.1);
+  }
+  .opt-btn:hover:not(:disabled){ filter:brightness(1.06); }
+  .opt-btn:disabled{ cursor:default; }
+
+  .opt-btn.c1{ background:linear-gradient(160deg, #57A7D6, var(--blue)); }
+  .opt-btn.c2{ background:linear-gradient(160deg, #F5A26E, var(--coral)); }
+  .opt-btn.c3{ background:linear-gradient(160deg, #8FCB8F, var(--green)); }
+  .opt-btn.c4{ background:linear-gradient(160deg, #DCAEEF, var(--purple)); }
+
+  .opt-btn.correct{
+    animation: correctPulse .6s ease;
+    box-shadow:0 0 0 4px #ffffff, 0 0 0 8px var(--green), 0 8px 16px rgba(0,0,0,0.1);
+  }
+  @keyframes correctPulse{
+    0%{ transform:scale(1); }
+    40%{ transform:scale(1.08); }
+    100%{ transform:scale(1); }
+  }
+  .opt-btn.wrong{
+    animation: shake .5s ease;
+    filter:grayscale(0.3) brightness(0.85);
+    box-shadow:0 0 0 4px #ffffff, 0 0 0 8px var(--red), 0 8px 16px rgba(0,0,0,0.1);
+  }
+  @keyframes shake{
+    0%,100%{ transform:translateX(0); }
+    20%{ transform:translateX(-8px); }
+    40%{ transform:translateX(8px); }
+    60%{ transform:translateX(-6px); }
+    80%{ transform:translateX(6px); }
+  }
+
+  .feedback{
+    position:absolute;
+    left:50%;
+    bottom:-46px;
+    transform:translateX(-50%) translateY(10px);
+    font-size:17px;
+    font-weight:700;
+    padding:10px 20px;
+    border-radius:16px;
+    white-space:nowrap;
+    opacity:0;
+    transition: opacity .25s, transform .25s;
+    box-shadow:0 6px 14px rgba(0,0,0,0.15);
+    z-index:6;
+  }
+  .feedback.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .feedback.good{ background:#DFF3DF; color:var(--olive-dark); }
+  .feedback.bad{ background:#FCE0DE; color:var(--red); }
+
+  /* Confetti */
+  .confetti-piece{
+    position:fixed;
+    top:-10px;
+    width:10px;
+    height:14px;
+    opacity:0.95;
+    z-index:20;
+    animation: fall linear forwards;
+  }
+  @keyframes fall{
+    to{ transform:translateY(105vh) rotate(400deg); opacity:0.4; }
+  }
+
+  /* End screens */
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(46,58,70,0.55);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:50;
+  }
+  .overlay.show{ display:flex; }
+  .end-card{
+    background:#fff;
+    border-radius:28px;
+    padding:36px 30px;
+    width:min(88vw, 420px);
+    text-align:center;
+    box-shadow:0 20px 50px rgba(0,0,0,0.3);
+    border:4px solid var(--stone);
+  }
+  .end-emoji{ font-size:70px; margin-bottom:10px; display:block; }
+  .end-title{ font-size:26px; font-weight:900; color:var(--ink); margin-bottom:8px; }
+  .end-sub{ font-size:15px; color:#6B7684; margin-bottom:22px; }
+  .end-sub .fr{ display:block; font-size:12px; color:#B7BEC7; margin-top:4px;}
+  .restart-btn{
+    font-family:inherit;
+    font-size:18px;
+    font-weight:700;
+    padding:14px 30px;
+    border:none;
+    border-radius:20px;
+    background:linear-gradient(160deg, var(--olive), var(--olive-dark));
+    color:#fff;
+    cursor:pointer;
+    box-shadow:0 6px 0 rgba(0,0,0,0.15);
+    transition: transform .12s;
+  }
+  .restart-btn:active{ transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.15); }
+
+  @media (max-width:420px){
+    .hebrew-word{ font-size:36px; }
+    .word-emoji{ font-size:52px; }
+    .opt-btn{ font-size:16px; padding:14px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-decor">
+  <div class="sun-glow"></div>
+  <div class="cloud cloud1"></div>
+  <div class="cloud cloud2"></div>
+
+  <svg class="star-david sd1" viewBox="0 0 100 100"><path d="M50 3 L61 30 L91 30 L67 48 L76 78 L50 60 L24 78 L33 48 L9 30 L39 30 Z" fill="none" stroke="#2C5C78" stroke-width="4"/></svg>
+  <svg class="star-david sd2" viewBox="0 0 100 100"><path d="M50 3 L61 30 L91 30 L67 48 L76 78 L50 60 L24 78 L33 48 L9 30 L39 30 Z" fill="none" stroke="#2C5C78" stroke-width="4"/></svg>
+  <svg class="star-david sd3" viewBox="0 0 100 100"><path d="M50 3 L61 30 L91 30 L67 48 L76 78 L50 60 L24 78 L33 48 L9 30 L39 30 Z" fill="none" stroke="#2C5C78" stroke-width="4"/></svg>
+
+  <svg class="olive-branch ob1" viewBox="0 0 100 60"><path d="M5 55 Q40 20 95 8" fill="none" stroke="#6B7A42" stroke-width="3"/><ellipse cx="30" cy="38" rx="8" ry="5" fill="#8A9A5B" transform="rotate(-30 30 38)"/><ellipse cx="50" cy="26" rx="8" ry="5" fill="#8A9A5B" transform="rotate(-25 50 26)"/><ellipse cx="70" cy="16" rx="8" ry="5" fill="#8A9A5B" transform="rotate(-20 70 16)"/></svg>
+  <svg class="olive-branch ob2" viewBox="0 0 100 60"><path d="M5 55 Q40 20 95 8" fill="none" stroke="#6B7A42" stroke-width="3"/><ellipse cx="30" cy="38" rx="8" ry="5" fill="#8A9A5B" transform="rotate(-30 30 38)"/><ellipse cx="50" cy="26" rx="8" ry="5" fill="#8A9A5B" transform="rotate(-25 50 26)"/><ellipse cx="70" cy="16" rx="8" ry="5" fill="#8A9A5B" transform="rotate(-20 70 16)"/></svg>
+
+  <svg class="dome" viewBox="0 0 480 130" preserveAspectRatio="xMidYMax meet">
+    <rect x="0" y="95" width="480" height="35" fill="#E4C888"/>
+    <rect x="60" y="70" width="30" height="30" fill="#D9C9A3"/>
+    <rect x="110" y="60" width="30" height="40" fill="#D9C9A3"/>
+    <rect x="340" y="65" width="30" height="35" fill="#D9C9A3"/>
+    <rect x="390" y="72" width="30" height="28" fill="#D9C9A3"/>
+    <rect x="210" y="55" width="60" height="45" fill="#EFE0BC"/>
+    <ellipse cx="240" cy="45" rx="34" ry="20" fill="#F5B942"/>
+    <rect x="236" y="12" width="8" height="20" fill="#F5B942"/>
+    <circle cx="240" cy="10" r="4" fill="#F5B942"/>
+  </svg>
+</div>
+
+<div class="hud">
+  <div class="hearts" id="hearts">
+    <span class="heart" data-i="1">❤️</span>
+    <span class="heart" data-i="2">❤️</span>
+    <span class="heart" data-i="3">❤️</span>
+  </div>
+
+  <div class="timer-box">
+    <div class="timer-wrap">
+      <svg viewBox="0 0 56 56">
+        <circle class="timer-ring-bg" cx="28" cy="28" r="24"></circle>
+        <circle class="timer-ring" id="timerRing" cx="28" cy="28" r="24" stroke-dasharray="150.8" stroke-dashoffset="0"></circle>
+      </svg>
+      <div class="timer-face">⏰</div>
+      <div class="timer-num" id="timerNum">15</div>
+    </div>
+  </div>
+</div>
+
+<div class="stage">
+  <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+
+  <div class="card">
+    <div class="instruction">
+      בחר/י את התרגום הנכון
+      <span class="fr">Choisis la bonne traduction</span>
+    </div>
+    <div class="word-emoji" id="wordEmoji">🐱</div>
+    <div class="hebrew-word" id="hebrewWord">
+      חָתוּל
+      <svg class="lifebuoy" id="lifebuoy" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="40" fill="#fff" stroke="#E0554F" stroke-width="10"/>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#fff" stroke-width="10" stroke-dasharray="12.5 12.5"/>
+        <circle cx="50" cy="50" r="16" fill="none" stroke="#2C5C78" stroke-width="4"/>
+        <line x1="50" y1="10" x2="50" y2="26" stroke="#2C5C78" stroke-width="4"/>
+        <line x1="50" y1="74" x2="50" y2="90" stroke="#2C5C78" stroke-width="4"/>
+        <line x1="10" y1="50" x2="26" y2="50" stroke="#2C5C78" stroke-width="4"/>
+        <line x1="74" y1="50" x2="90" y2="50" stroke="#2C5C78" stroke-width="4"/>
+      </svg>
+      <div class="feedback" id="feedback"></div>
+    </div>
+
+    <div class="options" id="options"></div>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="end-card">
+    <span class="end-emoji" id="endEmoji">🏆</span>
+    <div class="end-title" id="endTitle">כל הכבוד!</div>
+    <div class="end-sub" id="endSub">
+      ענית נכון על <span id="scoreText">0</span> מילים!
+      <span class="fr" id="endSubFr">Bravo !</span>
+    </div>
+    <button class="restart-btn" id="restartBtn">שחק שוב 🔁</button>
+  </div>
+</div>
+
+<script>
+const WORDS = [
+  { he:"חָתוּל", emoji:"🐱", correct:"Chat", opts:["Chat","Chien","Oiseau","Poisson"] },
+  { he:"כֶּלֶב", emoji:"🐶", correct:"Chien", opts:["Chien","Chat","Lapin","Cheval"] },
+  { he:"שֶׁמֶשׁ", emoji:"☀️", correct:"Soleil", opts:["Soleil","Lune","Étoile","Nuage"] },
+  { he:"בַּיִת", emoji:"🏠", correct:"Maison", opts:["Maison","École","Jardin","Voiture"] },
+  { he:"סֵפֶר", emoji:"📖", correct:"Livre", opts:["Livre","Stylo","Cahier","Table"] },
+  { he:"מַיִם", emoji:"💧", correct:"Eau", opts:["Eau","Lait","Jus","Pain"] },
+  { he:"תַּפּוּחַ", emoji:"🍎", correct:"Pomme", opts:["Pomme","Banane","Orange","Raisin"] },
+  { he:"יֶלֶד", emoji:"👦", correct:"Garçon", opts:["Garçon","Fille","Homme","Bébé"] },
+  { he:"יַלְדָּה", emoji:"👧", correct:"Fille", opts:["Fille","Garçon","Femme","Maman"] },
+  { he:"אִמָּא", emoji:"👩", correct:"Maman", opts:["Maman","Papa","Sœur","Grand-mère"] },
+  { he:"אַבָּא", emoji:"👨", correct:"Papa", opts:["Papa","Maman","Frère","Grand-père"] },
+  { he:"כָּחוֹל", emoji:"🔵", correct:"Bleu", opts:["Bleu","Rouge","Vert","Jaune"] },
+  { he:"אָדוֹם", emoji:"🔴", correct:"Rouge", opts:["Rouge","Bleu","Blanc","Noir"] },
+  { he:"שָׁלוֹשׁ", emoji:"3️⃣", correct:"Trois", opts:["Trois","Deux","Quatre","Cinq"] },
+  { he:"שָׂמֵחַ", emoji:"😊", correct:"Content", opts:["Content","Triste","Fatigué","Fâché"] },
+];
+
+let order = [];
+let current = 0;
+let lives = 3;
+let score = 0;
+let timeLeft = 15;
+let timerInterval = null;
+let locked = false;
+
+const CIRC = 2 * Math.PI * 24;
+
+const heartsEl = document.getElementById('hearts');
+const timerRing = document.getElementById('timerRing');
+const timerNum = document.getElementById('timerNum');
+const wordEmoji = document.getElementById('wordEmoji');
+const hebrewWordEl = document.getElementById('hebrewWord');
+const optionsEl = document.getElementById('options');
+const progressFill = document.getElementById('progressFill');
+const lifebuoy = document.getElementById('lifebuoy');
+const feedback = document.getElementById('feedback');
+const overlay = document.getElementById('overlay');
+const endEmoji = document.getElementById('endEmoji');
+const endTitle = document.getElementById('endTitle');
+const scoreText = document.getElementById('scoreText');
+const endSubFr = document.getElementById('endSubFr');
+const restartBtn = document.getElementById('restartBtn');
+
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function initGame(){
+  order = shuffle(WORDS.map((_,i)=>i));
+  current = 0;
+  lives = 3;
+  score = 0;
+  overlay.classList.remove('show');
+  resetHearts();
+  loadWord();
+}
+
+function resetHearts(){
+  heartsEl.querySelectorAll('.heart').forEach(h=>{
+    h.classList.remove('lost');
+    h.textContent = '❤️';
+  });
+}
+
+function loseLife(){
+  const hs = heartsEl.querySelectorAll('.heart');
+  const remaining = [...hs].filter(h=>h.textContent==='❤️');
+  if(remaining.length===0) return;
+  const h = remaining[remaining.length-1];
+  h.classList.add('lost');
+  setTimeout(()=>{ h.textContent = '🩶'; }, 300);
+  lives--;
+  if(lives<=0){
+    setTimeout(endGame, 900);
+  }
+}
+
+function loadWord(){
+  if(current >= order.length){
+    setTimeout(()=>endGame(true), 400);
+    return;
+  }
+  locked = false;
+  lifebuoy.classList.remove('show');
+  feedback.classList.remove('show','good','bad');
+
+  const w = WORDS[order[current]];
+  wordEmoji.textContent = w.emoji;
+  hebrewWordEl.childNodes[0].textContent = w.he + ' ';
+
+  const opts = shuffle(w.opts);
+  optionsEl.innerHTML = '';
+  const colors = ['c1','c2','c3','c4'];
+  opts.forEach((opt, idx)=>{
+    const btn = document.createElement('button');
+    btn.className = 'opt-btn ' + colors[idx % colors.length];
+    btn.textContent = opt;
+    btn.addEventListener('click', ()=> handleAnswer(btn, opt, w.correct));
+    optionsEl.appendChild(btn);
+  });
+
+  progressFill.style.width = (current / order.length * 100) + '%';
+
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(timerInterval);
+  timeLeft = 15;
+  timerNum.textContent = timeLeft;
+  timerRing.setAttribute('stroke-dasharray', CIRC);
+  timerRing.setAttribute('stroke-dashoffset', 0);
+  timerRing.style.stroke = 'var(--coral)';
+
+  timerInterval = setInterval(()=>{
+    timeLeft--;
+    timerNum.textContent = Math.max(timeLeft,0);
+    const offset = CIRC * (1 - timeLeft/15);
+    timerRing.setAttribute('stroke-dashoffset', offset);
+    if(timeLeft <= 5){ timerRing.style.stroke = 'var(--red)'; }
+    if(timeLeft <= 0){
+      clearInterval(timerInterval);
+      if(!locked) handleTimeout();
+    }
+  }, 1000);
+}
+
+function handleTimeout(){
+  locked = true;
+  showFeedback(false, true);
+  loseLife();
+  const w = WORDS[order[current]];
+  [...optionsEl.children].forEach(b=>{
+    b.disabled = true;
+    if(b.textContent === w.correct) b.classList.add('correct');
+  });
+  setTimeout(()=>{
+    if(lives>0){ current++; loadWord(); }
+  }, 1400);
+}
+
+function handleAnswer(btn, chosen, correct){
+  if(locked) return;
+  if(chosen === correct){
+    locked = true;
+    clearInterval(timerInterval);
+    btn.classList.add('correct');
+    lifebuoy.classList.add('show');
+    showFeedback(true);
+    score++;
+    launchConfetti();
+    [...optionsEl.children].forEach(b=> b.disabled = true);
+    setTimeout(()=>{ current++; loadWord(); }, 1300);
+  } else {
+    btn.classList.add('wrong');
+    btn.disabled = true;
+    showFeedback(false);
+    loseLife();
+    if(lives<=0){
+      locked = true;
+      clearInterval(timerInterval);
+    }
+  }
+}
+
+function showFeedback(good, timeout){
+  feedback.classList.remove('good','bad');
+  if(good){
+    feedback.textContent = 'כל הכבוד! 🎉';
+    feedback.classList.add('good');
+  } else if(timeout){
+    feedback.textContent = 'הזמן נגמר! ⏰';
+    feedback.classList.add('bad');
+  } else {
+    feedback.textContent = 'נסה שוב! 💭';
+    feedback.classList.add('bad');
+  }
+  feedback.classList.add('show');
+  setTimeout(()=>feedback.classList.remove('show'), 1100);
+}
+
+function launchConfetti(){
+  const colors = ['#57A7D6','#F5A26E','#8FCB8F','#DCAEEF','#F5B942'];
+  for(let i=0;i<24;i++){
+    const p = document.createElement('div');
+    p.className = 'confetti-piece';
+    p.style.left = Math.random()*100 + 'vw';
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.animationDuration = (2 + Math.random()*1.5) + 's';
+    p.style.borderRadius = Math.random()>0.5 ? '50%' : '2px';
+    document.body.appendChild(p);
+    setTimeout(()=>p.remove(), 4000);
+  }
+}
+
+function endGame(won){
+  clearInterval(timerInterval);
+  progressFill.style.width = '100%';
+  overlay.classList.add('show');
+  scoreText.textContent = score;
+  if(won){
+    endEmoji.textContent = '🏆';
+    endTitle.textContent = 'סיימת את המשחק!';
+    endSubFr.textContent = 'Bravo, tu as terminé le jeu !';
+  } else {
+    endEmoji.textContent = '💛';
+    endTitle.textContent = 'כמעט הצלחת!';
+    endSubFr.textContent = "Presque ! Réessaie, tu vas y arriver.";
+  }
+}
+
+restartBtn.addEventListener('click', initGame);
+
+initGame();
+</script>
+</body>
+</html>
